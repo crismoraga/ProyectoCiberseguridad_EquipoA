@@ -1,0 +1,13 @@
+export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
+export type Member = 'Cristobal' | 'Sergio' | 'Lucas' | 'Catalina' | 'Daniela';
+export type Status = 'todo' | 'in-progress' | 'review' | 'done';
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  priority: Priority;
+  assignees: Member[];
+  status: Status;
+  comments: number;
+}
