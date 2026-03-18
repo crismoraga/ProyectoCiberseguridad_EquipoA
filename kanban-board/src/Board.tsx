@@ -3,8 +3,8 @@ import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Plus, Award } from 'lucide-react';
 import { Column } from './Column';
-import type { Task, Status } from './types';
-import { initialTasks } from './data';
+import type { Member, Task, Status } from './types';
+import { initialTasks, teamMembers } from './data';
 // import confetti from 'canvas-confetti';
 
 const COLUMNS: { id: Status; title: string; color: string }[] = [
@@ -21,6 +21,9 @@ export const KanbanBoard: React.FC = () => {
   });
 
   const [showAchievement, setShowAchievement] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [memberFilter, setMemberFilter] = useState<'ALL' | Member>('ALL');
+  const [priorityFilter, setPriorityFilter] = useState<'ALL' | Task['priority']>('ALL');
 
   useEffect(() => {
     localStorage.setItem('teamA-kanban-vars', JSON.stringify(tasks));
@@ -37,16 +40,6 @@ export const KanbanBoard: React.FC = () => {
     
     // Check if task moved to 'done'
     if (destination.droppableId === 'done' && source.droppableId !== 'done') {
-        const myCanvas = document.createElement('canvas');
-        myCanvas.style.position = 'fixed';
-        myCanvas.style.inset = '0';
-        myCanvas.style.width = '100vw';
-        myCanvas.style.height = '100vh';
-        myCanvas.style.pointerEvents = 'none';
-        myCanvas.style.zIndex = '9999';
-        document.body.appendChild(myCanvas);
-        
-        // I will just use motion achievement since canvas-confetti is not installed.
         setShowAchievement(true);
         setTimeout(() => setShowAchievement(false), 3000);
     }
@@ -62,6 +55,19 @@ export const KanbanBoard: React.FC = () => {
     
     setTasks([...otherTasks, ...destinationTasks]);
   };
+
+  const filteredTasks = tasks.filter((task) => {
+    const bySearch =
+      searchTerm.trim().length === 0 ||
+      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const byMember = memberFilter === 'ALL' || task.assignees.includes(memberFilter);
+    const byPriority = priorityFilter === 'ALL' || task.priority === priorityFilter;
+
+    return bySearch && byMember && byPriority;
+  });
 
   const completedCount = tasks.filter(t => t.status === 'done').length;
   const progressPercent = Math.round((completedCount / tasks.length) * 100) || 0;
@@ -144,7 +150,62 @@ export const KanbanBoard: React.FC = () => {
                 <div className="text-2xl font-bold text-emerald-400">{completedCount}</div>
                 <div className="text-xs text-slate-400 font-medium uppercase mt-1">Secured</div>
               </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-cyan-300">{filteredTasks.length}</div>
+                <div className="text-xs text-slate-400 font-medium uppercase mt-1">Visible</div>
+              </div>
             </div>
+          </div>
+
+          <div className="mt-6 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-xl grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar tareas, tags o descripción..."
+              className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-500/20"
+            />
+
+            <select
+              value={memberFilter}
+              onChange={(e) => setMemberFilter(e.target.value as 'ALL' | Member)}
+              className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-500/20"
+            >
+              <option value="ALL">Todos los responsables</option>
+              {teamMembers.map((member) => (
+                <option key={member.name} value={member.name}>
+                  {member.avatar} {member.name} ({member.role})
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value as 'ALL' | Task['priority'])}
+              className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-500/20"
+            >
+              <option value="ALL">Todas las prioridades</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {teamMembers.map((member) => (
+              <button
+                key={`chip-${member.name}`}
+                onClick={() => setMemberFilter(memberFilter === member.name ? 'ALL' : member.name)}
+                className={`px-3 py-1.5 rounded-full text-xs border transition-all duration-200 ${
+                  memberFilter === member.name
+                    ? 'bg-indigo-500/20 text-indigo-200 border-indigo-400/40'
+                    : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                {member.avatar} {member.name}
+              </button>
+            ))}
           </div>
         </header>
 
@@ -156,7 +217,7 @@ export const KanbanBoard: React.FC = () => {
                   id={col.id}
                   title={col.title}
                   accentColor={col.color}
-                  tasks={tasks.filter(t => t.status === col.id)}
+                  tasks={filteredTasks.filter(t => t.status === col.id)}
                 />
               </div>
             ))}

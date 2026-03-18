@@ -2,6 +2,12 @@ export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
 export type Member = 'Cristobal' | 'Sergio' | 'Lucas' | 'Catalina' | 'Daniela';
 export type Status = 'todo' | 'in-progress' | 'review' | 'done';
 
+export interface SubTask {
+  id: string;
+  title: string;
+  done: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -10,4 +16,6 @@ export interface Task {
   assignees: Member[];
   status: Status;
   comments: number;
+  tags: string[];
+  subTasks: SubTask[];
 }

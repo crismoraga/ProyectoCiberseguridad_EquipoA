@@ -1,6 +1,6 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import { MessageSquare, AlertCircle, AlertTriangle, ArrowRightCircle, CheckCircle } from 'lucide-react';
+import { MessageSquare, AlertCircle, AlertTriangle, ArrowRightCircle, CheckCircle, ListChecks } from 'lucide-react';
 import type { Task, Priority } from './types';
 import { teamMembers } from './data';
 
@@ -28,6 +28,11 @@ const getPriorityColor = (p: Priority) => {
 };
 
 export const TaskCard: React.FC<Props> = ({ task, index }) => {
+  const doneSubTasks = task.subTasks.filter((subTask) => subTask.done).length;
+  const subTaskProgress = task.subTasks.length
+    ? Math.round((doneSubTasks / task.subTasks.length) * 100)
+    : 0;
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
@@ -50,6 +55,33 @@ export const TaskCard: React.FC<Props> = ({ task, index }) => {
 
           <h3 className="font-bold text-slate-100 mb-2 leading-snug text-sm group-hover:text-indigo-300 transition-colors">{task.title}</h3>
           <p className="text-[13px] text-slate-400 mb-5 line-clamp-3 leading-relaxed">{task.description}</p>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {task.tags.map((tag) => (
+              <span
+                key={`${task.id}-${tag}`}
+                className="px-2 py-1 rounded-md text-[10px] uppercase tracking-wide font-semibold bg-indigo-500/10 text-indigo-300 border border-indigo-400/20"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
+              <div className="flex items-center gap-1.5">
+                <ListChecks className="w-3.5 h-3.5" />
+                <span>Subtareas</span>
+              </div>
+              <span className="font-semibold text-slate-300">{doneSubTasks}/{task.subTasks.length}</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-slate-700/70 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500 transition-all duration-500"
+                style={{ width: `${subTaskProgress}%` }}
+              />
+            </div>
+          </div>
 
           <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/5">
             <div className="flex -space-x-2">
