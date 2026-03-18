@@ -12,13 +12,13 @@ interface Props {
 
 export const Column: React.FC<Props> = ({ id, title, tasks, accentColor }) => {
   return (
-    <div className="flex flex-col w-[320px] min-w-[320px] bg-slate-900/50 rounded-2xl border border-slate-800 backdrop-blur-xl h-full pb-4">
-      <div className={`p-4 border-b border-slate-800/80 rounded-t-2xl flex justify-between items-center bg-slate-800/20`}>
-        <div className="flex items-center gap-2">
-          <div className={`w-2.5 h-2.5 rounded-full ${accentColor}`} />
-          <h2 className="font-semibold text-slate-200">{title}</h2>
+    <div className="flex flex-col w-[340px] min-w-[340px] bg-slate-900/40 rounded-3xl border border-white/5 backdrop-blur-md h-full pb-4 shadow-xl transition-all duration-300 hover:bg-slate-900/50">
+      <div className="p-5 border-b border-white/5 rounded-t-3xl flex justify-between items-center bg-black/20">
+        <div className="flex items-center gap-3">
+          <div className={`w-3 h-3 rounded-full ${accentColor} shadow-[0_0_10px_currentColor]`} />
+          <h2 className="font-bold text-slate-200 uppercase tracking-wider text-sm">{title}</h2>
         </div>
-        <span className="text-xs font-semibold bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full border border-slate-700">
+        <span className="text-xs font-bold bg-white/10 text-white px-3 py-1 rounded-full border border-white/5">
           {tasks.length}
         </span>
       </div>
@@ -28,8 +28,8 @@ export const Column: React.FC<Props> = ({ id, title, tasks, accentColor }) => {
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 p-3 overflow-y-auto transition-colors duration-200 min-h-[150px] ${
-              snapshot.isDraggingOver ? 'bg-slate-800/30 rounded-b-2xl' : ''
+            className={`flex-1 p-4 overflow-y-auto custom-scrollbar transition-all duration-300 min-h-[150px] ${
+              snapshot.isDraggingOver ? 'bg-white/5 rounded-b-3xl inset-shadow-sm' : ''
             }`}
           >
             {tasks.map((task, index) => (

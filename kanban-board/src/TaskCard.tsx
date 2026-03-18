@@ -35,30 +35,30 @@ export const TaskCard: React.FC<Props> = ({ task, index }) => {
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={`p-4 rounded-xl mb-3 border bg-slate-800 transition-all duration-200 ${
+          className={`p-5 rounded-2xl mb-4 border transition-all duration-300 group ${
             snapshot.isDragging 
-              ? 'shadow-2xl border-indigo-500/50 scale-105 rotate-2' 
-              : 'shadow-sm border-slate-700 hover:border-slate-600'
+              ? 'bg-slate-800/90 shadow-[0_15px_30px_rgba(0,0,0,0.5)] border-indigo-500/50 scale-105 rotate-2 backdrop-blur-xl z-50' 
+              : 'bg-black/40 shadow-lg border-white/5 hover:border-white/20 hover:bg-slate-800/60'
           }`}
         >
-          <div className="flex justify-between items-start mb-2">
-            <span className={`text-xs px-2 py-1 rounded-md border flex items-center gap-1 font-medium ${getPriorityColor(task.priority)}`}>
+          <div className="flex justify-between items-start mb-3">
+            <span className={`text-[10px] px-2.5 py-1 rounded-lg border flex items-center gap-1.5 font-bold uppercase tracking-wider ${getPriorityColor(task.priority)}`}>
               {getPriorityIcon(task.priority)}
               {task.priority}
             </span>
           </div>
 
-          <h3 className="font-semibold text-slate-100 mb-1 leading-snug">{task.title}</h3>
-          <p className="text-xs text-slate-400 mb-4 line-clamp-2">{task.description}</p>
+          <h3 className="font-bold text-slate-100 mb-2 leading-snug text-sm group-hover:text-indigo-300 transition-colors">{task.title}</h3>
+          <p className="text-[13px] text-slate-400 mb-5 line-clamp-3 leading-relaxed">{task.description}</p>
 
-          <div className="flex items-center justify-between mt-auto">
+          <div className="flex items-center justify-between mt-auto pt-3 border-t border-white/5">
             <div className="flex -space-x-2">
               {task.assignees.map((assignee, i) => {
                 const member = teamMembers.find(m => m.name === assignee);
                 return (
                   <div 
                     key={i} 
-                    className="w-7 h-7 rounded-full bg-slate-700 border-2 border-slate-800 flex items-center justify-center text-xs"
+                    className="w-8 h-8 rounded-full bg-slate-800 border-2 border-[#090e1a] flex items-center justify-center text-sm shadow-md hover:-translate-y-1 transition-transform cursor-pointer"
                     title={assignee}
                   >
                     {member?.avatar}
@@ -68,9 +68,9 @@ export const TaskCard: React.FC<Props> = ({ task, index }) => {
             </div>
             
             {task.comments > 0 && (
-              <div className="flex items-center text-xs text-slate-500 gap-1 mt-1">
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>{task.comments}</span>
+              <div className="flex items-center text-xs text-slate-400 gap-1.5 bg-white/5 px-2 py-1 rounded-md hover:text-white transition-colors">
+                <MessageSquare className="w-4 h-4" />
+                <span className="font-semibold">{task.comments}</span>
               </div>
             )}
           </div>
