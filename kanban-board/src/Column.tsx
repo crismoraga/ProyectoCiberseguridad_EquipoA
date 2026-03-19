@@ -8,9 +8,10 @@ interface Props {
   title: string;
   tasks: Task[];
   accentColor: string;
+  onTaskUpdate: (taskId: string, updates: Partial<Task>) => void;
 }
 
-export const Column: React.FC<Props> = ({ id, title, tasks, accentColor }) => {
+export const Column: React.FC<Props> = ({ id, title, tasks, accentColor, onTaskUpdate }) => {
   return (
     <div className="flex flex-col w-[340px] min-w-[340px] bg-slate-900/40 rounded-3xl border border-white/5 backdrop-blur-md h-full pb-4 shadow-xl transition-all duration-300 hover:bg-slate-900/50">
       <div className="p-5 border-b border-white/5 rounded-t-3xl flex justify-between items-center bg-black/20">
@@ -33,7 +34,7 @@ export const Column: React.FC<Props> = ({ id, title, tasks, accentColor }) => {
             }`}
           >
             {tasks.map((task, index) => (
-              <TaskCard key={task.id} task={task} index={index} />
+              <TaskCard key={task.id} task={task} index={index} onTaskUpdate={onTaskUpdate} />
             ))}
             {provided.placeholder}
           </div>

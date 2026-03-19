@@ -16,7 +16,7 @@ const COLUMNS: { id: Status; title: string; color: string }[] = [
 
 export const KanbanBoard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>(() => {
-    const saved = localStorage.getItem('teamA-kanban-vars');
+    const saved = localStorage.getItem('teamA-kanban-vars-v2');
     return saved ? JSON.parse(saved) : initialTasks;
   });
 
@@ -26,7 +26,7 @@ export const KanbanBoard: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<'ALL' | Task['priority']>('ALL');
 
   useEffect(() => {
-    localStorage.setItem('teamA-kanban-vars', JSON.stringify(tasks));
+    localStorage.setItem('teamA-kanban-vars-v2', JSON.stringify(tasks));
   }, [tasks]);
 
   const handleDragEnd = (result: DropResult) => {
@@ -36,6 +36,8 @@ export const KanbanBoard: React.FC = () => {
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const taskIndex = tasks.findIndex(t => t.id === draggableId);
+    if(taskIndex === -1) return;
+    
     const updatedTask = { ...tasks[taskIndex], status: destination.droppableId as Status };
     
     // Check if task moved to 'done'
@@ -47,13 +49,16 @@ export const KanbanBoard: React.FC = () => {
     const newTasks = [...tasks];
     newTasks.splice(taskIndex, 1);
     
-    // Find exact index to insert
     const destinationTasks = newTasks.filter(t => t.status === destination.droppableId);
     destinationTasks.splice(destination.index, 0, updatedTask);
     
     const otherTasks = newTasks.filter(t => t.status !== destination.droppableId);
     
     setTasks([...otherTasks, ...destinationTasks]);
+  };
+
+  const handleTaskUpdate = (taskId: string, updates: Partial<Task>) => {
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
   };
 
   const filteredTasks = tasks.filter((task) => {
@@ -218,6 +223,7 @@ export const KanbanBoard: React.FC = () => {
                   title={col.title}
                   accentColor={col.color}
                   tasks={filteredTasks.filter(t => t.status === col.id)}
+                  onTaskUpdate={handleTaskUpdate}
                 />
               </div>
             ))}

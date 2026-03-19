@@ -1,109 +1,136 @@
-import type { Member, Task } from './types';
+import type { Task, TeamMember } from './types';
 
-interface TeamMember {
-  name: Member;
-  role: 'Lider' | 'Coder' | 'Hunter' | 'QA' | 'Writter';
-  avatar: string;
-}
+export const teamMembers: TeamMember[] = [
+  { name: 'Cristobal', role: 'Líder', avatar: '👑', color: 'bg-yellow-500/20 text-yellow-300' },
+  { name: 'Sergio', role: 'Coder', avatar: '💻', color: 'bg-blue-500/20 text-blue-300' },
+  { name: 'Lucas', role: 'Hunter', avatar: '🗡️', color: 'bg-red-500/20 text-red-300' },
+  { name: 'Catalina', role: 'Integrador/QA', avatar: '🛡️', color: 'bg-emerald-500/20 text-emerald-300' },
+  { name: 'Daniela', role: 'Writer', avatar: '✍️', color: 'bg-purple-500/20 text-purple-300' }
+];
 
 export const initialTasks: Task[] = [
-  // Zona 1
   {
-    id: 't-1',
-    title: 'Configurar firewall perimetral (NAT)',
-    description: 'Establecer router perimetral con reglas NAT en el segmento 200.1.6.0/24.',
-    priority: 'Critical',
-    assignees: ['Cristobal', 'Sergio'],
-    status: 'todo',
-    comments: 2,
-    tags: ['NAT', 'Firewall', 'Zona1'],
-    subTasks: [
-      { id: 't1-s1', title: 'Diseñar tabla de traducción NAT', done: true },
-      { id: 't1-s2', title: 'Aplicar reglas egress/ingress', done: false },
-      { id: 't1-s3', title: 'Validar rutas hacia DMZ', done: false },
-    ]
-  },
-  {
-    id: 't-2',
-    title: 'Servidor DNS interno (Bind9)',
-    description: 'Instalar y configurar Bind9 para resolucion de zonas.',
-    priority: 'High',
-    assignees: ['Sergio'],
-    status: 'todo',
-    comments: 0,
-    tags: ['DNS', 'Bind9', 'Zona1'],
-    subTasks: [
-      { id: 't2-s1', title: 'Configurar zona directa', done: true },
-      { id: 't2-s2', title: 'Configurar zona reversa', done: false },
-    ]
-  },
-  // Zona 2
-  {
-    id: 't-3',
-    title: 'Desplegar WebGoat',
-    description: 'Levantar contenedor Docker con WebGoat en puerto 8080.',
-    priority: 'Medium',
-    assignees: ['Sergio'],
-    status: 'in-progress',
-    comments: 1,
-    tags: ['Docker', 'WebGoat', 'DMZ'],
-    subTasks: [
-      { id: 't3-s1', title: 'Crear docker-compose de servicio', done: true },
-      { id: 't3-s2', title: 'Aplicar network DMZ', done: true },
-      { id: 't3-s3', title: 'Exponer puerto 8080 con reverse proxy', done: false },
-    ]
-  },
-  {
-    id: 't-4',
-    title: 'Hardening basico Expuestos',
-    description: 'Asegurar Nginx/Apache y FTP anonimo (vsftpd).',
-    priority: 'High',
-    assignees: ['Catalina', 'Lucas'],
-    status: 'todo',
-    comments: 3,
-    tags: ['Hardening', 'Nginx', 'vsftpd'],
-    subTasks: [
-      { id: 't4-s1', title: 'Deshabilitar métodos HTTP inseguros', done: false },
-      { id: 't4-s2', title: 'Restringir FTP anónimo por origen', done: false },
-      { id: 't4-s3', title: 'Ejecutar checklist CIS básico', done: false },
-    ]
-  },
-  // Zona 3
-  {
-    id: 't-5',
-    title: 'Desplegar DVWA (Docker)',
-    description: 'Implementar Damn Vulnerable Web App en entorno de Aplicaciones.',
+    id: 's0-1',
+    title: 'Organizaciòn y Setup Inicial',
+    description: 'Definir acta de constitucion, roles, tablero Kanban y documentar topologia base.',
     priority: 'Critical',
     assignees: ['Cristobal'],
-    status: 'todo',
+    status: 'done',
     comments: 0,
-    tags: ['DVWA', 'Docker', 'Zona3'],
+    tags: ['Readiness', 'Planning', 'Sprint-0'],
+    sprint: 'Sprint 0: Readiness A',
     subTasks: [
-      { id: 't5-s1', title: 'Crear volumen persistente de DB', done: false },
-      { id: 't5-s2', title: 'Aislar red interna de aplicación', done: false },
+      { id: 's0-1-1', title: 'Crear Acta de Constitucion', done: true },
+      { id: 's0-1-2', title: 'Asignar Roles del Equipo', done: true },
+      { id: 's0-1-3', title: 'Configurar Repositorio Base', done: true },
+      { id: 's0-1-4', title: 'Dibujar Topologia Inicial', done: true }
     ]
   },
   {
-    id: 't-6',
-    title: 'Politicas de acceso LDAP',
-    description: 'Configurar roles y AD basico para acceso interno.',
-    priority: 'Medium',
+    id: 's0-2',
+    title: 'Checklist de Herramientas Ofensivas y Defensivas',
+    description: 'Investigar y definir stack principal de herramientas autorizadas (Nmap, Burp, Wireshark, etc).',
+    priority: 'High',
+    assignees: ['Lucas', 'Sergio'],
+    status: 'in-progress',
+    comments: 2,
+    tags: ['Tools', 'Research', 'Sprint-0'],
+    sprint: 'Sprint 0: Readiness A',
+    subTasks: [
+      { id: 's0-2-1', title: 'Listado de escaneres', done: true },
+      { id: 's0-2-2', title: 'Plataformas defensivas y firewalls', done: false }
+    ]
+  },
+  {
+    id: 's1-1',
+    title: 'Despliegue del Laboratorio en Docker (6 Zonas)',
+    description: 'Levantar contenedores Docker, establecer red aislada y validar conectividad.',
+    priority: 'Critical',
+    assignees: ['Sergio'],
+    status: 'todo',
+    comments: 4,
+    tags: ['Infra', 'Docker', 'Sprint-1'],
+    sprint: 'Sprint 1: Readiness B',
+    subTasks: [
+      { id: 's1-1-1', title: 'Configurar redes puras (6 zonas)', done: false },
+      { id: 's1-1-2', title: 'Levantar WebGoat, crAPI, DVWA y Juice Shop', done: false }
+    ]
+  },
+  {
+    id: 's1-2',
+    title: 'Baseline y Documentacion Base',
+    description: 'Registrar inventario de puertos, servicios iniciales e informe de readiness.',
+    priority: 'High',
+    assignees: ['Daniela', 'Catalina'],
+    status: 'todo',
+    comments: 1,
+    tags: ['Docs', 'Baseline', 'Sprint-1'],
+    sprint: 'Sprint 1: Readiness B',
+    subTasks: [
+      { id: 's1-2-1', title: 'Inventario de activos', done: false },
+      { id: 's1-2-2', title: 'Reporte Readiness Finalizado', done: false }
+    ]
+  },
+  {
+    id: 's2-1',
+    title: 'Reconocimiento y Superficie de Ataque',
+    description: 'Mapear exposicion actual en zonas perimetrales. Hallar debilidades con escaneos exhaustivos.',
+    priority: 'Critical',
+    assignees: ['Lucas', 'Cristobal'],
+    status: 'todo',
+    comments: 0,
+    tags: ['Recon', 'RedTeam', 'Sprint-2'],
+    sprint: 'Sprint 2: Reconocimiento',
+    subTasks: [
+      { id: 's2-1-1', title: 'Escaneo de puertos TCP/UDP (Nmap)', done: false },
+      { id: 's2-1-2', title: 'Identificacion de servicios vulnerables y banners', done: false }
+    ]
+  },
+  {
+    id: 's3-1',
+    title: 'Aplicar Hardening y Reglas de Segmentacion',
+    description: 'Bloquear puertos, eliminar servicios innecesarios, fortificar hosts y contenedores.',
+    priority: 'High',
     assignees: ['Sergio', 'Catalina'],
     status: 'todo',
     comments: 0,
-    tags: ['LDAP', 'AD', 'RBAC'],
+    tags: ['Hardening', 'BlueTeam', 'Sprint-3'],
+    sprint: 'Sprint 3: Hardening',
     subTasks: [
-      { id: 't6-s1', title: 'Definir matriz de permisos por rol', done: true },
-      { id: 't6-s2', title: 'Implementar grupo BlueTeam-Operators', done: false },
-      { id: 't6-s3', title: 'Validar login por rol en servicio interno', done: false },
+      { id: 's3-1-1', title: 'Cerrar puertos no esenciales', done: false },
+      { id: 's3-1-2', title: 'Deshabilitar accesos root/anonimos', done: false },
+      { id: 's3-1-3', title: 'Validar funcionalidad (QA) de servicios legitimos', done: false }
+    ]
+  },
+  {
+    id: 's4-1',
+    title: 'Ejecucion Ofensiva Controlada (Pentest)',
+    description: 'Probar exploits sobre zonas aisladas para validar controles aplicados en Sprint 3.',
+    priority: 'Critical',
+    assignees: ['Lucas'],
+    status: 'todo',
+    comments: 6,
+    tags: ['Pentest', 'RedTeam', 'Sprint-4'],
+    sprint: 'Sprint 4: Ofensiva',
+    subTasks: [
+      { id: 's4-1-1', title: 'Validar inyeccion SQL / XSS (OWASP)', done: false },
+      { id: 's4-1-2', title: 'Lograr acceso inicial no privilegiado (Foothold)', done: false },
+      { id: 's4-1-3', title: 'Registrar toda evidencia como Hunter', done: false }
+    ]
+  },
+  {
+    id: 's5-1',
+    title: 'Deteccion, Monitoreo y Respuesta a Incidentes',
+    description: 'Revisar logs y definir alertas. Analizar SIEM/IDS para detectar los ataques ejecutados.',
+    priority: 'High',
+    assignees: ['Sergio', 'Daniela'],
+    status: 'todo',
+    comments: 0,
+    tags: ['SIEM', 'Logs', 'Sprint-5'],
+    sprint: 'Sprint 5: Deteccion',
+    subTasks: [
+      { id: 's5-1-1', title: 'Correlacionar eventos de red y host', done: false },
+      { id: 's5-1-2', title: 'Generar Informe de Incidente y Trazabilidad', done: false }
     ]
   }
-];
-
-export const teamMembers: TeamMember[] = [
-  { name: 'Cristobal', role: 'Lider', avatar: '👑' },
-  { name: 'Sergio', role: 'Coder', avatar: '💻' },
-  { name: 'Lucas', role: 'Hunter', avatar: '🗡️' },
-  { name: 'Catalina', role: 'QA', avatar: '🐞' },
-  { name: 'Daniela', role: 'Writter', avatar: '✍️' }
 ];

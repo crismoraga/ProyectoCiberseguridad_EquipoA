@@ -1,6 +1,14 @@
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
-export type Member = 'Cristobal' | 'Sergio' | 'Lucas' | 'Catalina' | 'Daniela';
 export type Status = 'todo' | 'in-progress' | 'review' | 'done';
+export type Member = 'Cristobal' | 'Sergio' | 'Lucas' | 'Catalina' | 'Daniela';
+export type Role = 'Líder' | 'Coder' | 'Hunter' | 'Writer' | 'Integrador/QA';
+
+export interface TeamMember {
+  name: Member;
+  role: Role;
+  avatar: string;
+  color: string;
+}
 
 export interface SubTask {
   id: string;
@@ -18,4 +26,5 @@ export interface Task {
   comments: number;
   tags: string[];
   subTasks: SubTask[];
+  sprint?: string;
 }
