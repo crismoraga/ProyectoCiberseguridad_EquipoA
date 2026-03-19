@@ -3,6 +3,7 @@ import { DragDropContext, type DropResult } from '@hello-pangea/dnd';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Plus, Award } from 'lucide-react';
 import { Column } from './Column';
+import { TaskModal } from './TaskModal';
 import type { Member, Task, Status } from './types';
 import { initialTasks, teamMembers } from './data';
 // import confetti from 'canvas-confetti';
@@ -24,6 +25,9 @@ export const KanbanBoard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [memberFilter, setMemberFilter] = useState<'ALL' | Member>('ALL');
   const [priorityFilter, setPriorityFilter] = useState<'ALL' | Task['priority']>('ALL');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [modalInitialStatus, setModalInitialStatus] = useState<Status>('todo');
 
   useEffect(() => {
     localStorage.setItem('teamA-kanban-vars-v2', JSON.stringify(tasks));
@@ -120,7 +124,10 @@ export const KanbanBoard: React.FC = () => {
                 </div>
               </div>
             </div>
-            <button className="bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all duration-300 px-6 py-3 rounded-2xl font-semibold shadow-lg backdrop-blur-md flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:-translate-y-0.5">
+            <button
+              onClick={() => { setEditingTask(null); setModalInitialStatus('todo'); setIsModalOpen(true); }}
+              className="bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all duration-300 px-6 py-3 rounded-2xl font-semibold shadow-lg backdrop-blur-md flex items-center gap-2 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:-translate-y-0.5"
+            >
               <Plus className="w-5 h-5" />
               New Objective
             </button>
@@ -224,11 +231,35 @@ export const KanbanBoard: React.FC = () => {
                   accentColor={col.color}
                   tasks={filteredTasks.filter(t => t.status === col.id)}
                   onTaskUpdate={handleTaskUpdate}
+                  onEditTask={(task) => {
+                    setEditingTask(task);
+                    setIsModalOpen(true);
+                  }}
+                  onAddTask={(status) => {
+                    setEditingTask(null);
+                    setModalInitialStatus(status);
+                    setIsModalOpen(true);
+                  }}
                 />
               </div>
             ))}
           </div>
         </DragDropContext>
+
+        <TaskModal
+          isOpen={isModalOpen}
+          initialData={editingTask}
+          initialStatus={modalInitialStatus}
+          onClose={() => { setIsModalOpen(false); setEditingTask(null); }}
+          onSave={(task) => {
+            if (editingTask) {
+              handleTaskUpdate(task.id, task);
+            } else {
+              setTasks((prev) => [...prev, task]);
+            }
+          }}
+        />
+
       </div>
     </div>
   );

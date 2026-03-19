@@ -1,5 +1,6 @@
 import React from 'react';
 import { Droppable } from '@hello-pangea/dnd';
+import { Plus } from 'lucide-react';
 import { TaskCard } from './TaskCard';
 import type { Task, Status } from './types';
 
@@ -9,9 +10,11 @@ interface Props {
   tasks: Task[];
   accentColor: string;
   onTaskUpdate: (taskId: string, updates: Partial<Task>) => void;
+  onEditTask?: (task: Task) => void;
+  onAddTask?: (status: Status) => void;
 }
 
-export const Column: React.FC<Props> = ({ id, title, tasks, accentColor, onTaskUpdate }) => {
+export const Column: React.FC<Props> = ({ id, title, tasks, accentColor, onTaskUpdate, onEditTask, onAddTask }) => {
   return (
     <div className="flex flex-col w-[340px] min-w-[340px] bg-slate-900/40 rounded-3xl border border-white/5 backdrop-blur-md h-full pb-4 shadow-xl transition-all duration-300 hover:bg-slate-900/50">
       <div className="p-5 border-b border-white/5 rounded-t-3xl flex justify-between items-center bg-black/20">
@@ -19,9 +22,19 @@ export const Column: React.FC<Props> = ({ id, title, tasks, accentColor, onTaskU
           <div className={`w-3 h-3 rounded-full ${accentColor} shadow-[0_0_10px_currentColor]`} />
           <h2 className="font-bold text-slate-200 uppercase tracking-wider text-sm">{title}</h2>
         </div>
-        <span className="text-xs font-bold bg-white/10 text-white px-3 py-1 rounded-full border border-white/5">
-          {tasks.length}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold bg-white/10 text-white px-3 py-1 rounded-full border border-white/5">
+            {tasks.length}
+          </span>
+          {onAddTask && (
+            <button 
+              onClick={() => onAddTask(id)}
+              className="text-slate-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-md"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <Droppable droppableId={id}>
@@ -34,7 +47,7 @@ export const Column: React.FC<Props> = ({ id, title, tasks, accentColor, onTaskU
             }`}
           >
             {tasks.map((task, index) => (
-              <TaskCard key={task.id} task={task} index={index} onTaskUpdate={onTaskUpdate} />
+              <TaskCard key={task.id} task={task} index={index} onTaskUpdate={onTaskUpdate} onEdit={onEditTask} />
             ))}
             {provided.placeholder}
           </div>
