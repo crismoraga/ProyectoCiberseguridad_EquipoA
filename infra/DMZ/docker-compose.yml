@@ -1,0 +1,35 @@
+version: "3.9"
+
+networks:
+  test_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "192.168.1.0/24"
+          gateway: "192.168.1.1"
+
+
+services:
+
+  web1:
+    image: webgoat/webgoat
+    #build: 
+      #context: ./web1
+      #dockerfile: ./Dockerfile
+    networks:
+      test_network:
+        ipv4_address: 192.168.1.103
+    ports:
+      - "4001:8080"
+
+
+  web2:
+    image: nginx:1.29.6-alpine-slim
+    build: 
+      context: ./web2
+      dockerfile: ./Dockerfile
+    networks:
+      test_network:
+        ipv4_address: 192.168.1.104
+    ports:
+      - "4000:443"

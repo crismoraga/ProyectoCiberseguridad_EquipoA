@@ -1,0 +1,23 @@
+version: "3.9"
+
+networks:
+  test_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "192.168.1.0/24"
+          gateway: "192.168.1.1"
+
+
+
+services:
+  web1:
+    image: instrumentisto/pure-ftpd:1.0.53
+    build: 
+      context: .
+      dockerfile: ./Dockerfile
+    networks:
+      test_network:
+        ipv4_address: 192.168.1.105
+    ports:
+      - "4002:8080"
