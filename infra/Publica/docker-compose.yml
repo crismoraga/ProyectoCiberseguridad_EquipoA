@@ -1,0 +1,31 @@
+networks:
+  publica:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: "200.1.6.0/24"
+        gateway: 200.1.6.1
+
+services:
+
+  dns:
+    image: internetsystemsconsortium/bind9:9.20
+    build: 
+      context: ./DNS
+      dockerfile: ./Dockerfile
+    networks:
+      publica:
+        ipv4_address: 200.1.6.2
+    #ports:
+    #  -"3000:"
+
+  proxy:
+    image: nginx:1.29.6-alpine-slim
+    build: 
+      context: ./Proxy
+      dockerfile: ./Dockerfile
+    networks:
+      publica:
+        ipv4_address: 200.1.6.3
+    ports:
+      - "3001:80"

@@ -1,0 +1,42 @@
+networks:
+  aplicaciones:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "10.2.3.0/24"
+          gateway: "10.2.3.1"
+
+services:
+
+  dvwa:
+    image: vulnerables/web-dvwa
+    build: 
+      context: ./DVWA
+      dockerfile: ./Dockerfile
+    networks:
+      aplicaciones:
+        ipv4_address: 10.2.3.2
+    ports:
+      - "5001:80"
+    
+  nginx_interno:
+    image: nginx:1.29.6-alpine-slim
+    build: 
+      context: ./web3
+      dockerfile: ./Dockerfile
+    networks:
+      aplicaciones:
+        ipv4_address: 10.2.3.3
+    ports:
+      - "5002:80"
+
+  ftpd_autenticado:
+    image: instrumentisto/pure-ftpd:1.0.53
+    build: 
+      context: ./ftp_auth
+      dockerfile: ./Dockerfile
+    networks:
+      aplicaciones:
+        ipv4_address: 10.2.3.4
+    ports:
+      - "5003:8080"

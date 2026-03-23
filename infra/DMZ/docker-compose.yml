@@ -1,35 +1,44 @@
-version: "3.9"
-
 networks:
-  test_network:
+  dmz:
     driver: bridge
     ipam:
       config:
-        - subnet: "192.168.1.0/24"
-          gateway: "192.168.1.1"
+        - subnet: "10.1.2.0/24"
+          gateway: "10.1.2.1"
 
 
 services:
 
-  web1:
+  webgoat:
     image: webgoat/webgoat
     #build: 
       #context: ./web1
       #dockerfile: ./Dockerfile
     networks:
-      test_network:
-        ipv4_address: 192.168.1.103
+      dmz:
+        ipv4_address: 10.1.2.2
     ports:
-      - "4001:8080"
+      - "4000:8080"
 
 
-  web2:
+  nginx_publico:
     image: nginx:1.29.6-alpine-slim
     build: 
       context: ./web2
       dockerfile: ./Dockerfile
     networks:
-      test_network:
-        ipv4_address: 192.168.1.104
+      dmz:
+        ipv4_address: 10.1.2.3
     ports:
-      - "4000:443"
+      - "4001:80"
+
+  ftpd_anonimo:
+    image: instrumentisto/pure-ftpd:1.0.53
+    build: 
+      context: ./ftpd
+      dockerfile: ./Dockerfile
+    networks:
+      dmz:
+        ipv4_address: 10.1.2.4
+    ports:
+      - "4002:8080"
