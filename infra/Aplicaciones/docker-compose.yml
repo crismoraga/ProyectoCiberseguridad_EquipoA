@@ -7,36 +7,117 @@ networks:
           gateway: "10.2.3.1"
 
 services:
+  samba_dc:
+    image: nowsci/samba-domain:latest
+    container_name: samba-dc
+    hostname: dc1
+    domainname: labtel.local
+
+    # Para evitar problemas típicos de ACL, sysvol, ntp y permisos internos
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - SYS_TIME
+
+    networks:
+      aplicaciones:
+        ipv4_address: 10.2.3.5
+
+    # Evita autoreferencia DNS circular problemática al inicio
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+    environment:
+      DOMAIN: LABTEL.LOCAL
+      DOMAINPASS: "CiberSeguridad2024!"
+      ROLE: dc
+      JOIN: "false"
+      DNS_FORWARDER: 8.8.8.8
+      TZ: America/Santiago
+
+    volumes:
+      - samba_data:/var/lib/samba
+      - samba_config:/etc/samba
+
+    tmpfs:
+      - /run
+      - /tmp
+
+    # Eliminamos el override del command que causaba el error de /sbin/tini
+    # command: ["/sbin/tini", "--", "/usr/bin/supervisor.sh"]
+
+    healthcheck:
+      test: ["CMD-SHELL", "samba-tool domain info 127.0.0.1 >/dev/null 2>&1 || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
+
+    restart: unless-stopped
+    stop_grace_period: 60s
 
   dvwa:
     image: vulnerables/web-dvwa
-    build: 
+    build:
       context: ./DVWA
       dockerfile: ./Dockerfile
+    container_name: dvwa
+    depends_on:
+      samba_dc:
+        condition: service_healthy
     networks:
       aplicaciones:
         ipv4_address: 10.2.3.2
+    dns:
+      - 10.2.3.5
+      - 8.8.8.8
     ports:
       - "5001:80"
-    
+    restart: unless-stopped
+
   nginx_interno:
     image: nginx:1.29.6-alpine-slim
-    build: 
+    build:
       context: ./web3
       dockerfile: ./Dockerfile
+    container_name: nginx-interno
+    depends_on:
+      samba_dc:
+        condition: service_healthy
     networks:
       aplicaciones:
         ipv4_address: 10.2.3.3
+    dns:
+      - 10.2.3.5
+      - 8.8.8.8
     ports:
       - "5002:80"
+    restart: unless-stopped
 
   ftpd_autenticado:
     image: instrumentisto/pure-ftpd:1.0.53
-    build: 
+    build:
       context: ./ftp_auth
       dockerfile: ./Dockerfile
+    container_name: ftpd-autenticado
+    depends_on:
+      samba_dc:
+        condition: service_healthy
     networks:
       aplicaciones:
         ipv4_address: 10.2.3.4
+    dns:
+      - 10.2.3.5
+      - 8.8.8.8
     ports:
-      - "5003:8080"
+      - "5003:21"
+      - "30000-30009:30000-30009"
+    environment:
+      PUBLICHOST: 10.2.3.4
+      FTP_PASSIVE_PORTS: "30000:30009"
+    restart: unless-stopped
+
+volumes:
+  samba_data:
+  samba_config:
