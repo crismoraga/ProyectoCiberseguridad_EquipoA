@@ -1,3 +1,1 @@
-FROM nginx
-
-WORKDIR /etc/nginx
+FROM webgoat/webgoat

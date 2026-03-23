@@ -76,12 +76,12 @@ services:
       - "5001:80"
     restart: unless-stopped
 
-  nginx_interno:
-    image: nginx:1.29.6-alpine-slim
-    build:
+  webgoat:
+    image: webgoat/webgoat
+    build: 
       context: ./web3
       dockerfile: ./Dockerfile
-    container_name: nginx-interno
+    container_name: webgoat
     depends_on:
       samba_dc:
         condition: service_healthy
@@ -92,7 +92,7 @@ services:
       - 10.2.3.5
       - 8.8.8.8
     ports:
-      - "5002:80"
+      - "5002:8080"
     restart: unless-stopped
 
   ftpd_autenticado:

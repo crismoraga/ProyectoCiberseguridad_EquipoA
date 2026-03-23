@@ -1,1 +1,1 @@
-FROM webgoat/webgoat
+FROM bkimminich/juice-shop

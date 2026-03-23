@@ -1,0 +1,4 @@
+zone "equipoa.local" {
+    type master;
+    file "/etc/bind/db.equipoa.local"; # La ruta como la ve el contenedor, no el host
+};

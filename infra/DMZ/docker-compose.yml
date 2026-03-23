@@ -1,6 +1,9 @@
 networks:
   dmz:
     driver: bridge
+    #driver: macvlan
+    #driver_opts:
+      #parent: eth0
     ipam:
       config:
         - subnet: "10.1.2.0/24"
@@ -9,16 +12,16 @@ networks:
 
 services:
 
-  webgoat:
-    image: webgoat/webgoat
-    #build: 
-      #context: ./web1
-      #dockerfile: ./Dockerfile
+  juice-shop:
+    image: bkimminich/juice-shop
+    build: 
+      context: ./web1
+      dockerfile: ./Dockerfile
     networks:
       dmz:
         ipv4_address: 10.1.2.2
     ports:
-      - "4000:8080"
+      - "4000:3000"
 
 
   nginx_publico:
@@ -41,4 +44,5 @@ services:
       dmz:
         ipv4_address: 10.1.2.4
     ports:
-      - "4002:8080"
+      - "4002:20"
+      - "4003:21"

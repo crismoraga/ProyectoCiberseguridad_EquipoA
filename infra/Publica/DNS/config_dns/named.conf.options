@@ -1,0 +1,22 @@
+acl "trusted_zones" {
+    127.0.0.0/8;
+    200.1.6.0/24; # Zona 1 - Publica
+    10.1.2.0/24; # Zona 2 - DMZ
+    10.2.3.0/24; # Zona 3 - Aplicaciones
+};
+
+options {
+    directory "/var/cache/bind";
+    
+    recursion yes;
+    allow-query { trusted_zones; private-networks; };
+    
+    # Forwarders: Si el DNS del lab no sabe una respuesta (ej. google.com), le pregunta a estos:
+    forwarders {
+    8.8.8.8;
+    1.1.1.1;
+    };
+    
+    dnssec-validation auto;
+    listen-on-v6 { any; };
+};
