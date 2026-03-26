@@ -1,0 +1,11 @@
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name grupoa www.grupoa;
+        
+    location / {
+        proxy_pass 10.1.2.2;
+        include proxy_params;
+    }
+}

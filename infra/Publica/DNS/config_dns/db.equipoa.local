@@ -19,7 +19,7 @@ webdmz  IN      A       10.1.2.3        ; Cambiar a IP de pure-ftpd anónimo
 ftp     IN      A       10.1.2.4        ; Cambiar a IP Apache
 
 ; ZONA 3 (App)
-dvwa    IN      A       10.2.3.2        ;
-webgoat IN      a       10.2.3.3        ;
-ftp_aut IN      A       10.2.3.4        ;
+dvwa    IN      A       10.2.3.2        ; DVWA
+webgoat IN      a       10.2.3.3        ; WEBGOAT
+ftp_aut IN      A       10.2.3.4        ; FTP con autenticacion
 ad      IN      A       10.2.3.5        ; Samba AD Controller
