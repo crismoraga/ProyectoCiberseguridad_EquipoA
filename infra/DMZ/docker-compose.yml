@@ -46,3 +46,16 @@ services:
     ports:
       - "4002:20"
       - "4003:21"
+      - "30000-30009:30000-30009"
+    environment:
+      PUBLICHOST: "127.0.0.1"
+      FTP_PASSIVE_PORTS: "30000:30009"
+      ANONYMOUS_USER_ENABLED: "true"
+      ANONYMOUS_UPLOAD_ENABLED: "true"
+      ANONYMOUS_MKDIR_ENABLED: "true"
+    volumes:
+      - ftpdata:/var/ftp 
+
+
+volumes:
+  ftpdata:
