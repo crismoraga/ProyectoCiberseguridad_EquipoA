@@ -22,11 +22,20 @@ services:
     ports:
       - "53:53/tcp"       # DNS Interno del Dominio
       - "53:53/udp"
-      - "88:88/tcp"       # Kerberos (Para que el Red Team ataque en Sprint 4)
+      - "88:88/tcp"       # Kerberos (Validación de tickets TGT)
       - "88:88/udp"
-      - "389:389/tcp"     # LDAP estándar
-      - "636:636/tcp"     # LDAPS seguro
-      - "445:445/tcp"     # SMB (Compartir recursos corporativos)
+      - "135:135/tcp"     # RPC (Llamadas a procedimientos remotos)
+      - "137:137/udp"     # NetBIOS Name Service (Descubrimiento Windows)
+      - "138:138/udp"     # NetBIOS Datagram
+      - "139:139/tcp"     # NetBIOS Session Service
+      - "389:389/tcp"     # LDAP estándar (Directorio abierto)
+      - "389:389/udp"
+      - "445:445/tcp"     # SMB (Carpetas compartidas y SYSVOL)
+      - "464:464/tcp"     # Kerberos kpasswd (Para ataque/cambio de claves)
+      - "464:464/udp"
+      - "636:636/tcp"     # LDAPS (LDAP Seguro / Cifrado)
+      - "3268:3268/tcp"   # Global Catalog LDAP (Búsquedas rápidas AD)
+      - "3269:3269/tcp"   # Global Catalog LDAPS
     cap_add:
       - SYS_ADMIN         # Requerido nativamente para que Samba escriba permisos/ACL de Windows
     volumes:
