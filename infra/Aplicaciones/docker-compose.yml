@@ -1,10 +1,28 @@
+name: enterprise-zone3-internal
+
 networks:
-  aplicaciones:
-    driver: bridge
+  infra_tier:
+    driver: macvlan
+    driver_opts:
+      parent: enp2s2.20 # Subinterfaz VLAN 20
     ipam:
       config:
         - subnet: "10.2.3.0/24"
           gateway: "10.2.3.1"
+          ip_range: "10.2.3.0/28"
+  apps_tier:
+    driver: macvlan
+    driver_opts:
+      parent: enp2s2.30 # Subinterfaz VLAN 30
+    ipam:
+      config:
+        - subnet: "10.2.4.0/24"
+          gateway: "10.2.4.1"
+          ip_range: "10.2.4.0/28"
+
+secrets:
+  samba_admin_password:
+    file: ./secrets/samba_pass.txt
 
 services:
   samba_dc:
@@ -12,116 +30,151 @@ services:
     container_name: samba-dc
     hostname: dc1
     domainname: labtel.local
-
-    # Para evitar problemas típicos de ACL, sysvol, ntp y permisos internos
-    privileged: true
+    cap_drop:
+      - ALL
     cap_add:
       - SYS_ADMIN
       - SYS_TIME
-
+      - NET_ADMIN
+      - DAC_OVERRIDE
+      - CHOWN
+      - SETGID
+      - SETUID
+    security_opt:
+      - seccomp:unconfined
     networks:
-      aplicaciones:
+      infra_tier:
         ipv4_address: 10.2.3.5
-
-    # Evita autoreferencia DNS circular problemática al inicio
     dns:
-      - 8.8.8.8
-      - 1.1.1.1
-
+      - 127.0.0.1
     environment:
       DOMAIN: LABTEL.LOCAL
-      DOMAINPASS: "CiberSeguridad2024!"
+      DOMAINPASS_FILE: /run/secrets/samba_admin_password
       ROLE: dc
-      JOIN: "false"
-      DNS_FORWARDER: 8.8.8.8
+      DNS_FORWARDER: 200.1.6.2 # Resolución enrutada hacia la Zona 1
       TZ: America/Santiago
-
+    secrets:
+      - samba_admin_password
     volumes:
       - samba_data:/var/lib/samba
       - samba_config:/etc/samba
-
-    tmpfs:
-      - /run
-      - /tmp
-
-    # Eliminamos el override del command que causaba el error de /sbin/tini
-    # command: ["/sbin/tini", "--", "/usr/bin/supervisor.sh"]
-
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.2'
+          memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "samba-tool domain info 127.0.0.1 >/dev/null 2>&1 || exit 1"]
-      interval: 20s
-      timeout: 10s
-      retries: 10
-      start_period: 90s
-
+      test: ["CMD", "samba-tool", "domain", "info", "127.0.0.1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     restart: unless-stopped
-    stop_grace_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
 
   dvwa:
-    image: vulnerables/web-dvwa
-    build:
-      context: ./DVWA
-      dockerfile: ./Dockerfile
+    image: vulnerables/web-dvwa:latest
     container_name: dvwa
     depends_on:
       samba_dc:
         condition: service_healthy
+    security_opt:
+      - no-new-privileges:true # Evita que exploits en DVWA eleven privilegios en el contenedor
     networks:
-      aplicaciones:
-        ipv4_address: 10.2.3.2
+      apps_tier:
+        ipv4_address: 10.2.4.2
     dns:
       - 10.2.3.5
-      - 8.8.8.8
-    ports:
-      - "5001:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   webgoat:
-    image: webgoat/webgoat
-    build: 
-      context: ./web3
-      dockerfile: ./Dockerfile
+    image: webgoat/webgoat:latest
     container_name: webgoat
     depends_on:
       samba_dc:
         condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
     networks:
-      aplicaciones:
-        ipv4_address: 10.2.3.3
+      apps_tier:
+        ipv4_address: 10.2.4.3
     dns:
       - 10.2.3.5
-      - 8.8.8.8
-    ports:
-      - "5002:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   ftpd_autenticado:
-    image: instrumentisto/pure-ftpd:1.0.53
-    build:
-      context: ./ftp_auth
-      dockerfile: ./Dockerfile
-    container_name: ftpd-autenticado
+    image: instrumentisto/pure-ftpd:latest
+    container_name: ftpd-auth
     depends_on:
       samba_dc:
         condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+      - SYS_CHROOT
     networks:
-      aplicaciones:
-        ipv4_address: 10.2.3.4
+      apps_tier:
+        ipv4_address: 10.2.4.4
     dns:
       - 10.2.3.5
-      - 8.8.8.8
-    ports:
-      - "5003:21"
-      - "30000-30009:30000-30009"
     environment:
-      PUBLICHOST: 10.2.3.4
-      FTP_PASSIVE_PORTS: "30000:30009"
+      PUBLICHOST: "10.2.4.4"
+      FTP_PASSIVE_PORTS: "30000:30010"
+      LDAP_CONFIG_FILE: /etc/pure-ftpd/pureftpd-ldap.conf
       ANONYMOUS_USER_ENABLED: "false"
-      ANONYMOUS_UPLOAD_ENABLED: "false"
-      ANONYMOUS_MKDIR_ENABLED: "false"
-    restart: unless-stopped
     volumes:
-      - ftpdata_auth:/var/ftp 
+      - ftpdata_auth:/var/ftp
+      - ./configs/pureftpd-ldap.conf:/etc/pure-ftpd/pureftpd-ldap.conf:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
 volumes:
   samba_data:
