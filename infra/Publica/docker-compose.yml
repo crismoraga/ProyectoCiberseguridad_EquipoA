@@ -1,31 +1,109 @@
+name: enterprise-zone1-public
+
 networks:
   publica:
-    driver: bridge
+    driver: macvlan
+    driver_opts:
+      parent: enp2s2
     ipam:
       config:
-      - subnet: "200.1.6.0/24"
-        gateway: 200.1.6.1
+        - subnet: "200.1.6.0/24"
+          gateway: "200.1.6.1"
+          ip_range: "200.1.6.0/28" 
 
 services:
-
-  dns:
+  dns_master:
     image: internetsystemsconsortium/bind9:9.20
-    build: 
-      context: ./DNS
-      dockerfile: ./Dockerfile
+    container_name: dns-enterprise-primary
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - SETGID
+      - SETUID
+      - CHOWN
+      - DAC_OVERRIDE
     networks:
       publica:
         ipv4_address: 200.1.6.2
-    ports:
-      - "53:53"
+    environment:
+      - BIND9_USER=bind
+      - TZ=America/Santiago
+    read_only: true
+    tmpfs:
+      - /var/run/named:size=10M,mode=0775,uid=104,gid=105
+      - /var/cache/bind:size=50M,mode=0775,uid=104,gid=105
+    volumes:
+      - ./DNS/config:/etc/bind:ro
+      - ./DNS/zones:/var/lib/bind:ro
+      - dns_logs:/var/log/named
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "dig", "+short", "@127.0.0.1", "localhost", "||", "exit", "1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
-  proxy:
-    image: nginx:1.29.6-alpine-slim
-    build: 
-      context: ./Proxy
-      dockerfile: ./Dockerfile
+  proxy_edge:
+    image: nginx:1.29.7-alpine-slim
+    container_name: nginx-edge-proxy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:size=100M,mode=0777
+      - /var/run:size=10M,mode=0777
+      - /tmp:size=50M,mode=0777
     networks:
       publica:
         ipv4_address: 200.1.6.3
-    ports:
-      - "3001:80"
+    volumes:
+      - ./Proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./Proxy/conf.d:/etc/nginx/conf.d:ro
+      - ./Proxy/certs:/etc/nginx/certs:ro
+      - proxy_logs:/var/log/nginx
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/health", "||", "exit", "1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  dns_logs:
+  proxy_logs:
