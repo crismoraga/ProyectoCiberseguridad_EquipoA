@@ -1,61 +1,134 @@
+name: enterprise-zone2-dmz
+
 networks:
   dmz:
-    driver: bridge
-    #driver: macvlan
-    #driver_opts:
-      #parent: eth0
+    driver: macvlan
+    driver_opts:
+      parent: enp2s2.40 # Asignación de subinterfaz (VLAN 40) exclusiva para la DMZ
     ipam:
       config:
         - subnet: "10.1.2.0/24"
           gateway: "10.1.2.1"
-
+          ip_range: "10.1.2.0/28"
 
 services:
-
   juice-shop:
-    image: bkimminich/juice-shop
-    build: 
-      context: ./web1
-      dockerfile: ./Dockerfile
+    image: bkimminich/juice-shop:latest
+    container_name: juice-shop-dmz
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
     networks:
       dmz:
         ipv4_address: 10.1.2.2
-    ports:
-      - "4000:3000"
-
+    # El servicio escucha nativamente en su puerto original (3000) en la IP 10.1.2.2
+    read_only: true
+    tmpfs:
+      - /tmp:size=50M,mode=0777
+      - /juice-shop/data:size=50M,mode=0777
+      - /juice-shop/ftp:size=50M,mode=0777
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.2'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
   nginx_publico:
-    image: nginx:1.29.6-alpine-slim
-    build: 
-      context: ./web2
-      dockerfile: ./Dockerfile
+    image: nginx:1.29.7-alpine-slim
+    container_name: nginx-dmz
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:size=100M,mode=0777
+      - /var/run:size=10M,mode=0777
+      - /tmp:size=50M,mode=0777
     networks:
       dmz:
         ipv4_address: 10.1.2.3
-    ports:
-      - "4001:80"
+    # El servicio escucha nativamente en su puerto original (80) en la IP 10.1.2.3
+    volumes:
+      - ./web2/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./web2/html:/usr/share/nginx/html:ro
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80", "||", "exit", "1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
   ftpd_anonimo:
-    image: instrumentisto/pure-ftpd:1.0.53
-    build: 
-      context: ./ftpd
-      dockerfile: ./Dockerfile
+    image: instrumentisto/pure-ftpd:latest
+    container_name: ftpd-anon-dmz
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
+      - SYS_CHROOT # Requerido para enjaular usuarios FTP
     networks:
       dmz:
         ipv4_address: 10.1.2.4
-    ports:
-      - "4002:20"
-      - "4003:21"
-      - "30000-30009:30000-30009"
     environment:
-      PUBLICHOST: "127.0.0.1"
+      PUBLICHOST: "10.1.2.4" # Corrección crítica: IP real ruteable para el EPSV/PASV
       FTP_PASSIVE_PORTS: "30000:30009"
       ANONYMOUS_USER_ENABLED: "true"
       ANONYMOUS_UPLOAD_ENABLED: "true"
       ANONYMOUS_MKDIR_ENABLED: "true"
     volumes:
-      - ftpdata:/var/ftp 
-
+      - ftpdata:/var/ftp
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
 
 volumes:
   ftpdata:
