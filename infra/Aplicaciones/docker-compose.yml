@@ -1,30 +1,25 @@
 name: enterprise-zone3-internal
 
+# Zona 3: Aplicaciones internas corporativas (10.2.3.0/24)
+# Objetivo: aislar y proteger software interno en una sola red, enrutable por infraestructura física.
 networks:
-  infra_tier:
+  zone3_apps:
     driver: macvlan
     driver_opts:
-      parent: enp2s2.20 # Subinterfaz VLAN 20
+      parent: enp2s2.20 # Subinterfaz VLAN conectada a routers físicos para Zona 3
     ipam:
       config:
         - subnet: "10.2.3.0/24"
           gateway: "10.2.3.1"
-          ip_range: "10.2.3.0/28"
-  apps_tier:
-    driver: macvlan
-    driver_opts:
-      parent: enp2s2.30 # Subinterfaz VLAN 30
-    ipam:
-      config:
-        - subnet: "10.2.4.0/24"
-          gateway: "10.2.4.1"
-          ip_range: "10.2.4.0/28"
+          ip_range: "10.2.3.16/28" # Rango reservado para contenedores de aplicación
 
 secrets:
   samba_admin_password:
     file: ./secrets/samba_pass.txt
 
 services:
+  # Directorio Activo básico para autenticación LDAP/AD.
+  # Rol empresarial: identidad centralizada y base para RBAC.
   samba_dc:
     image: nowsci/samba-domain:latest
     container_name: samba-dc
@@ -43,7 +38,7 @@ services:
     security_opt:
       - seccomp:unconfined
     networks:
-      infra_tier:
+      zone3_apps:
         ipv4_address: 10.2.3.5
     dns:
       - 127.0.0.1
@@ -79,6 +74,8 @@ services:
         max-size: "50m"
         max-file: "3"
 
+  # Plataforma vulnerable interna para pruebas controladas.
+  # Se autentica contra el DNS/AD interno de la Zona 3.
   dvwa:
     image: vulnerables/web-dvwa:latest
     container_name: dvwa
@@ -88,8 +85,8 @@ services:
     security_opt:
       - no-new-privileges:true # Evita que exploits en DVWA eleven privilegios en el contenedor
     networks:
-      apps_tier:
-        ipv4_address: 10.2.4.2
+      zone3_apps:
+        ipv4_address: 10.2.3.20
     dns:
       - 10.2.3.5
     deploy:
@@ -107,27 +104,29 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  webgoat:
-    image: webgoat/webgoat:latest
-    container_name: webgoat
+  # Servidor web interno para empleados corporativos.
+  # Publica contenido sólo dentro de la red de aplicaciones internas.
+  web_interno:
+    image: nginx:1.29.7-alpine-slim
+    container_name: web-interno
     depends_on:
       samba_dc:
         condition: service_healthy
     security_opt:
       - no-new-privileges:true
     networks:
-      apps_tier:
-        ipv4_address: 10.2.4.3
+      zone3_apps:
+        ipv4_address: 10.2.3.21
     dns:
       - 10.2.3.5
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 1G
+          cpus: '0.5'
+          memory: 512M
         reservations:
-          cpus: '0.2'
-          memory: 256M
+          cpus: '0.1'
+          memory: 128M
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -135,6 +134,8 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # FTP interno autenticado por LDAP/AD.
+  # Política de acceso basada en rol: sólo miembros de grupos autorizados en AD.
   ftpd_autenticado:
     image: instrumentisto/pure-ftpd:latest
     container_name: ftpd-auth
@@ -152,12 +153,12 @@ services:
       - SETUID
       - SYS_CHROOT
     networks:
-      apps_tier:
-        ipv4_address: 10.2.4.4
+      zone3_apps:
+        ipv4_address: 10.2.3.22
     dns:
       - 10.2.3.5
     environment:
-      PUBLICHOST: "10.2.4.4"
+      PUBLICHOST: "10.2.3.22"
       FTP_PASSIVE_PORTS: "30000:30010"
       LDAP_CONFIG_FILE: /etc/pure-ftpd/pureftpd-ldap.conf
       ANONYMOUS_USER_ENABLED: "false"
