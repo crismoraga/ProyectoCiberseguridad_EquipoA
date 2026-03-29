@@ -1,7 +1,7 @@
 name: enterprise-zone3-internal
 
 # Zona 3: Aplicaciones internas corporativas (10.2.3.0/24)
-# Objetivo: aislar y proteger software interno en una sola red, ruteable por infraestructura física.
+# Objetivo: aislar y proteger software interno en una sola red, enrutable por infraestructura física.
 networks:
   zone3_apps:
     driver: macvlan
@@ -18,7 +18,7 @@ secrets:
     file: ./secrets/samba_pass.txt
 
 services:
-  # Directorio activo básico para autenticación LDAP/AD.
+  # Directorio Activo básico para autenticación LDAP/AD.
   # Rol empresarial: identidad centralizada y base para RBAC.
   samba_dc:
     image: nowsci/samba-domain:latest
