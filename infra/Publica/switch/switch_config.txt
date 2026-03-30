@@ -1,0 +1,28 @@
+
+enable
+
+configure terminal
+
+vlan 10
+name PUBLIC
+vlan 40
+name DMZ
+vlan 20
+name APPS
+
+
+interface FastEthernet 0/1
+switchport mode trunk
+
+interface FastEthernet 0/2
+switchport mode access
+switchport access vlan 10
+
+interface FastEthernet 0/3
+switchport mode access
+switchport access vlan 40
+
+interface FastEthernet 0/2
+switchport mode access
+switchport access vlan 20
+
