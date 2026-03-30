@@ -1,6 +1,6 @@
 $TTL    604800
 @       IN      SOA     ns1.equipoa.local.      admin.equipoa.local. (
-                                       2 ; Serial
+                                       4 ; Serial
                                   604800 ; Refresh
                                    86400 ; Retry
                                  2419200 ; Expire
@@ -8,18 +8,23 @@ $TTL    604800
 ;
 ; Name Servers
 @       IN      NS      ns1.equipoa.local.
-ns1     IN      A       200.1.6.5       ; Cambiar a la IP exacta de este contenedor DNS
+ns1     IN      A       200.1.6.2
 
 ; ZONA 1 (Proxy)
-proxy   IN      A       200.1.6.2       ; Cambiar a la IP del contenedor Nginx de Z1
+proxy   IN      A       200.1.6.3
+
+; Publicación NAT de servicios DMZ (VIPs)
+webgoat-pub IN   A       200.1.6.10
+webdmz-pub  IN   A       200.1.6.11
+ftp-pub     IN   A       200.1.6.12
 
 ; ZONA 2 (DMZ)
-juice   IN      A       10.1.2.2        ; Cambiar a IP de juice-shop
-webdmz  IN      A       10.1.2.3        ; Cambiar a IP de pure-ftpd anónimo
-ftp     IN      A       10.1.2.4        ; Cambiar a IP Apache
+webgoat IN      A       10.1.2.2
+webdmz  IN      A       10.1.2.3
+ftp     IN      A       10.1.2.4
 
 ; ZONA 3 (App)
-dvwa    IN      A       10.2.3.2        ; DVWA
-webgoat IN      a       10.2.3.3        ; WEBGOAT
-ftp_aut IN      A       10.2.3.4        ; FTP con autenticacion
-ad      IN      A       10.2.3.5        ; Samba AD Controller
+dvwa        IN      A       10.2.3.2
+webgoatint  IN      A       10.2.3.3
+ftp_aut     IN      A       10.2.3.4
+ad          IN      A       10.2.3.5

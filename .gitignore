@@ -1,0 +1,12 @@
+# Secrets locales (no versionar)
+infra/Aplicaciones/secrets/samba_pass.txt
+
+# Variables locales por host/zona (no versionar)
+.env
+infra/Publica/.env
+infra/DMZ/.env
+infra/Aplicaciones/.env
+
+# Evidencias temporales de pruebas
+qa_testing/Sprint_1/logs/
+security_tests/Sprint_1/scan_results_*/

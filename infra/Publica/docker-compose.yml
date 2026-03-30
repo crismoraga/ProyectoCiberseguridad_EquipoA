@@ -4,12 +4,12 @@ networks:
   publica:
     driver: macvlan
     driver_opts:
-      parent: enp2s2
+      parent: ${PUBLIC_PARENT_IFACE:-enp2s2}
     ipam:
       config:
-        - subnet: "200.1.6.0/24"
-          gateway: "200.1.6.1"
-          ip_range: "200.1.6.0/28" 
+        - subnet: "${PUBLIC_SUBNET:-200.1.6.0/24}"
+          gateway: "${PUBLIC_GATEWAY:-200.1.6.1}"
+          ip_range: "${PUBLIC_IP_RANGE:-200.1.6.0/28}"
 
 services:
   dns_master:
@@ -28,17 +28,16 @@ services:
       - DAC_OVERRIDE
     networks:
       publica:
-        ipv4_address: 200.1.6.2
+        ipv4_address: "${PUBLIC_DNS_IP:-200.1.6.2}"
     environment:
       - BIND9_USER=bind
-      - TZ=America/Santiago
+      - TZ=${LAB_TZ:-America/Santiago}
     read_only: true
     tmpfs:
       - /var/run/named:size=10M,mode=0775,uid=104,gid=105
       - /var/cache/bind:size=50M,mode=0775,uid=104,gid=105
     volumes:
-      - ./DNS/config:/etc/bind:ro
-      - ./DNS/zones:/var/lib/bind:ro
+      - ./DNS/config_dns:/etc/bind:ro
       - dns_logs:/var/log/named
     deploy:
       resources:
@@ -49,7 +48,7 @@ services:
           cpus: '0.1'
           memory: 128M
     healthcheck:
-      test: ["CMD", "dig", "+short", "@127.0.0.1", "localhost", "||", "exit", "1"]
+      test: ["CMD-SHELL", "dig +short @127.0.0.1 localhost || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -79,11 +78,11 @@ services:
       - /tmp:size=50M,mode=0777
     networks:
       publica:
-        ipv4_address: 200.1.6.3
+        ipv4_address: "${PUBLIC_PROXY_IP:-200.1.6.3}"
     volumes:
       - ./Proxy/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./Proxy/conf.d:/etc/nginx/conf.d:ro
-      - ./Proxy/certs:/etc/nginx/certs:ro
+      - ./Proxy/proxy_params:/etc/nginx/proxy_params:ro
       - proxy_logs:/var/log/nginx
     deploy:
       resources:
@@ -94,7 +93,7 @@ services:
           cpus: '0.2'
           memory: 256M
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/health", "||", "exit", "1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3

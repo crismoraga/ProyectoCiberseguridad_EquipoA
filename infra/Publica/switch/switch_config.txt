@@ -1,28 +1,42 @@
-
 enable
-
 configure terminal
 
+hostname SW1-EQUIPOA
+
 vlan 10
-name PUBLIC
+ name PUBLICA
 vlan 40
-name DMZ
+ name DMZ
 vlan 20
-name APPS
+ name APLICACIONES
 
+! Trunk al router (router-on-a-stick)
+interface FastEthernet0/1
+ description TRUNK_A_ROUTER
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,40
 
-interface FastEthernet 0/1
-switchport mode trunk
+! Host físico Zona Publica (PC 1)
+interface FastEthernet0/2
+ description HOST_ZONA_PUBLICA
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
 
-interface FastEthernet 0/2
-switchport mode access
-switchport access vlan 10
+! Host físico Zona DMZ (PC 2)
+interface FastEthernet0/3
+ description HOST_ZONA_DMZ
+ switchport mode access
+ switchport access vlan 40
+ spanning-tree portfast
 
-interface FastEthernet 0/3
-switchport mode access
-switchport access vlan 40
+! Host físico Zona Aplicaciones (PC 3)
+interface FastEthernet0/4
+ description HOST_ZONA_APPS
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
 
-interface FastEthernet 0/2
-switchport mode access
-switchport access vlan 20
+end
+write memory
 

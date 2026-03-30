@@ -9,7 +9,8 @@ options {
     directory "/var/cache/bind";
     
     recursion yes;
-    allow-query { trusted_zones; private-networks; };
+    allow-query { trusted_zones; localhost; localnets; };
+    allow-recursion { trusted_zones; localhost; localnets; };
     
     # Forwarders: Si el DNS del lab no sabe una respuesta (ej. google.com), le pregunta a estos:
     forwarders {
@@ -18,5 +19,6 @@ options {
     };
     
     dnssec-validation auto;
+    listen-on { any; };
     listen-on-v6 { any; };
 };

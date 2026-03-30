@@ -3,7 +3,10 @@
 Esta guía proporciona la plantilla exacta para que el equipo implemente el Controlador de Dominio de Active Directory usando el contenedor [`nowsci/samba-domain`](https://hub.docker.com/r/nowsci/samba-domain) en la **Zona 3**.
 
 ## 1. El Archivo `docker-compose.yml` (Zona 3)
-A diferencia de Bind9, la imagen de Samba AD de Nowsci es **"auto-provisionable"**. Esto significa que el "Coder" no tieen que crear archivos de texto complicados a mano iniciales; el contenedor se configura solo la primera vez que arranca basándose en **Variables de Entorno (`environment`)**.
+
+> **Nota de implementación oficial del repositorio:** el despliegue activo de AD/LDAP para readiness está en `infra/Aplicaciones/docker-compose.yml`, parametrizado por `infra/Aplicaciones/.env` y secreto `infra/Aplicaciones/secrets/samba_pass.txt`.
+
+A diferencia de Bind9, la imagen de Samba AD de Nowsci es **"auto-provisionable"**. Esto significa que el "Coder" no tiene que crear archivos de texto complicados a mano iniciales; el contenedor se configura solo la primera vez que arranca basándose en **Variables de Entorno (`environment`)**.
 
 Para la Zona 3 (IPs en la subred `10.2.3.0/24`), el servicio se debe declarar así:
 
@@ -15,8 +18,8 @@ services:
     environment:
       - DOMAIN=equipoa.local            # Cambiar por su dominio corporativo
       - DOMAINPASS=Password123!         # Clave del Administrador del Dominio (¡Debe ser compleja!)
-      - HOSTIP=10.2.3.6                 # Importante: Poner la IP estática que le darán a este contenedor
-      - DNSFORWARDER=200.1.6.5          # Apuntar a la IP de su Bind9 (Zona 1) o 8.8.8.8 si Binding falla
+      - HOSTIP=10.2.3.5                 # Importante: Poner la IP estática que le darán a este contenedor
+      - DNSFORWARDER=200.1.6.2          # Apuntar a la IP de su Bind9 (Zona 1) o 8.8.8.8 si Binding falla
       - INSECURELDAP=true               # Permite probar LDAP por el puerto 389 (Solo para Sprint 1)
       - NOCOMPLEXITY=true               # VITAL PARA EL LAB: Permite crear contraseñas débiles (ej. "admin") para que el Red Team las crackee.
     ports:
@@ -44,7 +47,7 @@ services:
       - /etc/localtime:/etc/localtime:ro # Vital: Kerberos fallará si el reloj no está sincronizado
     # networks:
     #   zona3_net:
-    #     ipv4_address: 10.2.3.6
+    #     ipv4_address: 10.2.3.5
     # ------------------------------------------------------------------------------
     # NOTA: 
     # Las 3 líneas de arriba están comentadas a propósito para que el contenedor
@@ -56,14 +59,17 @@ services:
 ---
 
 ## 2. Puntos Clave para el Coder
+
 1. **Volúmenes (`volumes`):** Es vital mapear las carpetas `/etc/samba` y `/var/lib/samba` como muestra el código. Si no lo hacen, cada vez que apaguen Docker, perderán a todos los usuarios creados y el Active Directory se corromperá.
-2. **`HOSTIP`:** Esta imagen necesita saber qué IP tiene para configurar sus propios registros DNS de Active Directory internamente. Pongan ahí la IP de la Zona 3 (ej. `10.2.3.6`).
+2. **`HOSTIP`:** Esta imagen necesita saber qué IP tiene para configurar sus propios registros DNS de Active Directory internamente. Pongan ahí la IP de la Zona 3 (ej. `10.2.3.5`).
 3. **`DOMAINPASS`:** Active Directory es muy exigente por defecto. La contraseña DEBE tener mayúsculas, minúsculas, números y caracteres especiales. Si ponen "12345", el contenedor fallará al encender.
+4. **Dominio unificado:** mantener `equipoa.local` de forma consistente en DNS, AD y LDAP.
 
 ---
 
 ## 3. Consideraciones para Integración (Hunter/QA)
-Una vez que el contenedor levante (puede tardar un minuto la primera vez mientras genera la base de datos corporativa), el servidor FTP Autenticado (`pure-ftpd`) de la Zona 3 deberá configurarse apuntando a la IP `10.2.3.6` por el puerto `389` usando el dominio `equipoa.local`.
+
+Una vez que el contenedor levante (puede tardar un minuto la primera vez mientras genera la base de datos corporativa), el servidor FTP Autenticado (`pure-ftpd`) de la Zona 3 deberá configurarse apuntando a la IP `10.2.3.5` por el puerto `389` usando el dominio `equipoa.local`.
 
 ---
 

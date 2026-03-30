@@ -4,17 +4,17 @@ networks:
   dmz:
     driver: macvlan
     driver_opts:
-      parent: enp2s2.40 # Asignación de subinterfaz (VLAN 40) exclusiva para la DMZ
+      parent: ${DMZ_PARENT_IFACE:-enp2s2} # Interfaz del host DMZ (access port). Si usas trunk, usar subinterfaz VLAN.
     ipam:
       config:
-        - subnet: "10.1.2.0/24"
-          gateway: "10.1.2.1"
-          ip_range: "10.1.2.0/28"
+        - subnet: "${DMZ_SUBNET:-10.1.2.0/24}"
+          gateway: "${DMZ_GATEWAY:-10.1.2.1}"
+          ip_range: "${DMZ_IP_RANGE:-10.1.2.0/28}"
 
 services:
-  juice-shop:
-    image: bkimminich/juice-shop:latest
-    container_name: juice-shop-dmz
+  webgoat_dmz:
+    image: webgoat/webgoat:v2025.3
+    container_name: webgoat-dmz
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -26,13 +26,11 @@ services:
       - SETUID
     networks:
       dmz:
-        ipv4_address: 10.1.2.2
-    # El servicio escucha nativamente en su puerto original (3000) en la IP 10.1.2.2
+        ipv4_address: "${DMZ_WEBGOAT_IP:-10.1.2.2}"
+    # Servicio principal vulnerable en DMZ
     read_only: true
     tmpfs:
       - /tmp:size=50M,mode=0777
-      - /juice-shop/data:size=50M,mode=0777
-      - /juice-shop/ftp:size=50M,mode=0777
     deploy:
       resources:
         limits:
@@ -67,11 +65,10 @@ services:
       - /tmp:size=50M,mode=0777
     networks:
       dmz:
-        ipv4_address: 10.1.2.3
+        ipv4_address: "${DMZ_WEB_IP:-10.1.2.3}"
     # El servicio escucha nativamente en su puerto original (80) en la IP 10.1.2.3
     volumes:
-      - ./web2/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./web2/html:/usr/share/nginx/html:ro
+      - ./web2/awesome-landing-page-master:/usr/share/nginx/html:ro
     deploy:
       resources:
         limits:
@@ -81,7 +78,7 @@ services:
           cpus: '0.1'
           memory: 128M
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80", "||", "exit", "1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -107,9 +104,9 @@ services:
       - SYS_CHROOT # Requerido para enjaular usuarios FTP
     networks:
       dmz:
-        ipv4_address: 10.1.2.4
+        ipv4_address: "${DMZ_FTP_IP:-10.1.2.4}"
     environment:
-      PUBLICHOST: "10.1.2.4" # Corrección crítica: IP real ruteable para el EPSV/PASV
+      PUBLICHOST: "${DMZ_FTP_IP:-10.1.2.4}" # IP de publicación FTP
       FTP_PASSIVE_PORTS: "30000:30009"
       ANONYMOUS_USER_ENABLED: "true"
       ANONYMOUS_UPLOAD_ENABLED: "true"

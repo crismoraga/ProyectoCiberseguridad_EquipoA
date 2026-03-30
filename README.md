@@ -93,6 +93,39 @@ El equipo cuenta con una **Aplicación Web Interactiva** diseñada a medida como
 2. Ejecuta `npm run build`
 3. Utiliza la Vercel CLI o conecta el repositorio en la consola de vercel.com para hacer el deploy automático.
 
+## ✅ Estado de Cumplimiento (pdf_lab / Readiness)
+
+El repositorio del **Equipo A** queda alineado para Sprint 0 y Sprint 1 con foco en zonas:
+
+- **Pública/NAT** (`200.1.6.0/24`)
+- **DMZ** (`10.1.2.0/24`)
+- **Aplicaciones** (`10.2.3.0/24`)
+
+### Sprint 0 (Readiness A)
+
+- Acta de constitución
+- Roles y RACI
+- Backlog inicial
+- Topología propuesta
+- **Listado de herramientas**
+- Checklist de instalación
+
+### Sprint 1 (Readiness B/Cierre)
+
+- Infraestructura de 3 zonas lista para despliegue físico
+- Baseline de puertos/usuarios/configuración
+- Checklist de hardening inicial
+- Estructura de evidencia técnica trazable
+- Informe de readiness actualizado
+
+## 🧭 Arranque rápido en sala (3 PCs + red física)
+
+1. Configurar switch/router/firewall siguiendo `docs/Guia_Red_Fisica_Router_Switch_Firewall.md`.
+2. Ajustar `.env` por host/zona (`infra/Publica`, `infra/DMZ`, `infra/Aplicaciones`).
+3. Levantar contenedores con `docker compose` según `docs/Guia_Despliegue_3PC_Docker.md`.
+4. Ejecutar checklist operativo en `docs/Guia_Checklist_Readiness_Operativo.md`.
+5. Guardar evidencias en `qa_testing/Sprint_1/` y `security_tests/Sprint_1/`.
+
 ---
 
 > *"En la defensa perimetral no existe el 100% seguro, pero sí existe el 100% preparado."* — Equipo A

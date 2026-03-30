@@ -1,26 +1,98 @@
-
 enable
-
 configure terminal
 
-interface FastEthernet 0/0
-no shutdown
-exit
+hostname R1-EQUIPOA
+no ip domain-lookup
 
-interface FastEthernet 0/0.10
-ip address 200.1.6.1 255.255.255.0
-encapsulation dot1Q 10
-no shutdown
-exit
+! -------------------------
+! TRUNK hacia switch (router-on-a-stick)
+! -------------------------
+interface FastEthernet0/0
+ description TRUNK_A_SWITCH
+ no shutdown
 
-interface FastEthernet 0/0.40
-ip address 10.1.2.1 255.255.255.0
-encapsulation dot1Q 40
-no shutdown
-exit
+interface FastEthernet0/0.10
+ encapsulation dot1Q 10
+ ip address 200.1.6.1 255.255.255.0
+ description VLAN10_PUBLICA
+ ip nat outside
+ ip access-group ACL_PUBLIC_IN in
+ no shutdown
 
-interface FastEthernet 0/0.20
-ip address 10.2.3.1 255.255.255.0
-encapsulation dot1Q 20
-no shutdown
-exit
+interface FastEthernet0/0.40
+ encapsulation dot1Q 40
+ ip address 10.1.2.1 255.255.255.0
+ description VLAN40_DMZ
+ ip nat inside
+ ip access-group ACL_DMZ_IN in
+ no shutdown
+
+interface FastEthernet0/0.20
+ encapsulation dot1Q 20
+ ip address 10.2.3.1 255.255.255.0
+ description VLAN20_APLICACIONES
+ ip nat inside
+ ip access-group ACL_APPS_IN in
+ no shutdown
+
+! -------------------------
+! Enlace a firewall físico
+! Ajustar IP/interface según rack
+! -------------------------
+interface FastEthernet0/1
+ description LINK_A_FIREWALL
+ ip address 172.16.100.2 255.255.255.252
+ no shutdown
+
+! Ruta por defecto hacia firewall
+ip route 0.0.0.0 0.0.0.0 172.16.100.1
+
+! -------------------------
+! NAT Gateway (si NAT principal está en firewall, dejar solo SNAT o deshabilitar este bloque)
+! -------------------------
+ip access-list standard NAT_INSIDE
+ permit 10.1.2.0 0.0.0.255
+ permit 10.2.3.0 0.0.0.255
+
+! SNAT/PAT de salida para DMZ y Apps hacia zona pública
+ip nat inside source list NAT_INSIDE interface FastEthernet0/0.10 overload
+
+! DNAT estático de servicios DMZ expuestos
+ip nat inside source static tcp 10.1.2.2 8080 200.1.6.10 8080
+ip nat inside source static tcp 10.1.2.3 80 200.1.6.11 80
+ip nat inside source static tcp 10.1.2.4 21 200.1.6.12 21
+
+! -------------------------
+! ACLs mínimas de segmentación (baseline readiness)
+! -------------------------
+ip access-list extended ACL_PUBLIC_IN
+ remark Permitir servicios DMZ publicados via NAT (VIPs en Zona Publica)
+ permit tcp 200.1.6.0 0.0.0.255 host 200.1.6.10 eq 8080
+ permit tcp 200.1.6.0 0.0.0.255 host 200.1.6.11 eq 80
+ permit tcp 200.1.6.0 0.0.0.255 host 200.1.6.12 eq 21
+ remark Permitir consulta DNS al servidor interno
+ permit udp 200.1.6.0 0.0.0.255 host 200.1.6.2 eq 53
+ permit tcp 200.1.6.0 0.0.0.255 host 200.1.6.2 eq 53
+ remark Bloquear acceso directo de Publica a DMZ/Apps (sin NAT)
+ deny ip 200.1.6.0 0.0.0.255 10.1.2.0 0.0.0.255
+ deny ip 200.1.6.0 0.0.0.255 10.2.3.0 0.0.0.255
+ permit ip 200.1.6.0 0.0.0.255 any
+
+ip access-list extended ACL_DMZ_IN
+ remark DNS desde DMZ hacia Zona Publica
+ permit udp 10.1.2.0 0.0.0.255 host 200.1.6.2 eq 53
+ permit tcp 10.1.2.0 0.0.0.255 host 200.1.6.2 eq 53
+ remark Bloquear movimiento lateral DMZ -> Apps por defecto
+ deny ip 10.1.2.0 0.0.0.255 10.2.3.0 0.0.0.255
+ permit ip 10.1.2.0 0.0.0.255 any
+
+ip access-list extended ACL_APPS_IN
+ remark DNS desde Apps hacia Zona Publica
+ permit udp 10.2.3.0 0.0.0.255 host 200.1.6.2 eq 53
+ permit tcp 10.2.3.0 0.0.0.255 host 200.1.6.2 eq 53
+ remark Bloquear acceso directo a Zona Publica salvo DNS
+ deny ip 10.2.3.0 0.0.0.255 200.1.6.0 0.0.0.255
+ permit ip 10.2.3.0 0.0.0.255 any
+
+end
+write memory

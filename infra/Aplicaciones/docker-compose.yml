@@ -4,21 +4,12 @@ networks:
   infra_tier:
     driver: macvlan
     driver_opts:
-      parent: enp2s2.20 # Subinterfaz VLAN 20
+      parent: ${APPS_PARENT_IFACE:-enp2s2} # Interfaz del host Apps (access port). Si usas trunk, usar subinterfaz VLAN.
     ipam:
       config:
-        - subnet: "10.2.3.0/24"
-          gateway: "10.2.3.1"
-          ip_range: "10.2.3.0/28"
-  apps_tier:
-    driver: macvlan
-    driver_opts:
-      parent: enp2s2.30 # Subinterfaz VLAN 30
-    ipam:
-      config:
-        - subnet: "10.2.4.0/24"
-          gateway: "10.2.4.1"
-          ip_range: "10.2.4.0/28"
+        - subnet: "${APPS_SUBNET:-10.2.3.0/24}"
+          gateway: "${APPS_GATEWAY:-10.2.3.1}"
+          ip_range: "${APPS_IP_RANGE:-10.2.3.0/28}"
 
 secrets:
   samba_admin_password:
@@ -29,7 +20,7 @@ services:
     image: nowsci/samba-domain:latest
     container_name: samba-dc
     hostname: dc1
-    domainname: labtel.local
+    domainname: ${AD_DOMAIN_DNS:-equipoa.local}
     cap_drop:
       - ALL
     cap_add:
@@ -44,15 +35,15 @@ services:
       - seccomp:unconfined
     networks:
       infra_tier:
-        ipv4_address: 10.2.3.5
+        ipv4_address: "${APPS_AD_IP:-10.2.3.5}"
     dns:
       - 127.0.0.1
     environment:
-      DOMAIN: LABTEL.LOCAL
+      DOMAIN: ${AD_DOMAIN_NETBIOS:-EQUIPOA.LOCAL}
       DOMAINPASS_FILE: /run/secrets/samba_admin_password
       ROLE: dc
-      DNS_FORWARDER: 200.1.6.2 # Resolución enrutada hacia la Zona 1
-      TZ: America/Santiago
+      DNS_FORWARDER: ${APPS_DNS_FORWARDER:-200.1.6.2} # DNS de Zona Pública
+      TZ: ${LAB_TZ:-America/Santiago}
     secrets:
       - samba_admin_password
     volumes:
@@ -88,10 +79,10 @@ services:
     security_opt:
       - no-new-privileges:true # Evita que exploits en DVWA eleven privilegios en el contenedor
     networks:
-      apps_tier:
-        ipv4_address: 10.2.4.2
+      infra_tier:
+        ipv4_address: "${APPS_DVWA_IP:-10.2.3.2}"
     dns:
-      - 10.2.3.5
+      - ${APPS_AD_IP:-10.2.3.5}
     deploy:
       resources:
         limits:
@@ -116,10 +107,10 @@ services:
     security_opt:
       - no-new-privileges:true
     networks:
-      apps_tier:
-        ipv4_address: 10.2.4.3
+      infra_tier:
+        ipv4_address: "${APPS_WEBGOAT_IP:-10.2.3.3}"
     dns:
-      - 10.2.3.5
+      - ${APPS_AD_IP:-10.2.3.5}
     deploy:
       resources:
         limits:
@@ -152,12 +143,12 @@ services:
       - SETUID
       - SYS_CHROOT
     networks:
-      apps_tier:
-        ipv4_address: 10.2.4.4
+      infra_tier:
+        ipv4_address: "${APPS_FTP_IP:-10.2.3.4}"
     dns:
-      - 10.2.3.5
+      - ${APPS_AD_IP:-10.2.3.5}
     environment:
-      PUBLICHOST: "10.2.4.4"
+      PUBLICHOST: "${APPS_FTP_IP:-10.2.3.4}"
       FTP_PASSIVE_PORTS: "30000:30010"
       LDAP_CONFIG_FILE: /etc/pure-ftpd/pureftpd-ldap.conf
       ANONYMOUS_USER_ENABLED: "false"
