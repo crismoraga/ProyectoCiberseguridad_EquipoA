@@ -1,0 +1,7 @@
+services:
+  webgoat:
+    image: webgoat/webgoat:latest
+    ports:
+      - "4001:8080"
+      - "4002:9090"
+    
