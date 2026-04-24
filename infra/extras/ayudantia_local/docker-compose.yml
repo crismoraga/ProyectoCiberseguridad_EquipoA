@@ -1,0 +1,11 @@
+services:
+  webgoat:
+    image: webgoat/webgoat:latest
+    ports:
+      - "4001:8080"
+      - "4002:9090"
+    
+  juiceshop:
+    image: bkimminich/juice-shop
+    ports:
+      - "4000:3000"
