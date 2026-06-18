@@ -1,11 +1,20 @@
 #!/bin/bash
+# infra/labs/lab2/crapi.sh
+
+# Terminar la ejecución si ocurre un error
+set -e
+
+echo "[*] Verificando el entorno de crAPI..."
 
 if [ -f ./docker-compose.yml ]; then
-    echo "crAPI is installed"
-    docker compose up
+    echo "[+] Archivo docker-compose.yml detectado. Levantando contenedores..."
+    docker compose up -d
 else
-    echo "crAPI not installed... installing"
-    curl -o docker-compose.yml https://raw.githubusercontent.com/OWASP/crAPI/refs/heads/main/deploy/docker/docker-compose.yml
-    docker-compose -f docker-compose.yml --compatibility up -d
-    docker compose up
+    echo "[-] crAPI no está instalado. Descargando configuración oficial..."
+    curl -s -o docker-compose.yml https://raw.githubusercontent.com/OWASP/crAPI/refs/heads/main/deploy/docker/docker-compose.yml
+    
+    echo "[+] Desplegando infraestructura..."
+    docker compose --compatibility up -d
 fi
+
+echo "[+] Entorno crAPI operativo en segundo plano. Ingresa a http://127.0.0.1:8888"
