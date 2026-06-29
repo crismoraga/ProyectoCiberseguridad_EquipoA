@@ -1,0 +1,1 @@
+echo "Booted as $USER"
